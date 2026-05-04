@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Page Summarizer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+
+<body>
+  <!-- ── Header ── -->
+  <header class="header">
+    <div class="logo">
+      <span class="logo-icon" aria-hidden="true">⬡</span>
+      <span class="logo-text">Summari<em>ze</em></span>
+    </div>
+    <button class="settings-btn" id="settingsToggle" aria-label="Open settings" title="Settings">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3" />
+        <path
+          d="M19.07 4.93a10 10 0 0 1 1.41 1.42M4.93 4.93a10 10 0 0 0-1.41 1.42M19.07 19.07a10 10 0 0 1-1.41 1.42M4.93 19.07a10 10 0 0 1 1.41 1.42M20.66 9A10 10 0 0 1 21 12a10 10 0 0 1-.34 3M3.34 9A10 10 0 0 0 3 12a10 10 0 0 0 .34 3" />
+      </svg>
+    </button>
+  </header>
+
+  <!-- ── Settings Panel ── -->
+  <section class="settings-panel" id="settingsPanel" hidden aria-label="Settings">
+    <label class="field-label" for="modelInput">Model ID</label>
+    <div class="input-row">
+      <input
+        type="text"
+        id="modelInput"
+        class="api-input"
+        placeholder="gemini-flash-latest"
+        autocomplete="off"
+        spellcheck="false"
+      />
+    </div>
+    <label class="field-label" for="apiKeyInput">Google Gemini API Key</label>
+    <div class="input-row">
+      <input type="password" id="apiKeyInput" class="api-input" placeholder="Enter your API key…" autocomplete="off"
+        spellcheck="false" aria-describedby="apiKeyHint" />
+      <button class="btn-ghost" id="saveKeyBtn" aria-label="Save API key">Save</button>
+    </div>
+    <p class="hint" id="apiKeyHint">
+      Your key is stored locally via <code>chrome.storage.local</code> — never sent anywhere except the Google AI API.
+    </p>
+    <div class="settings-footer">
+      <button class="btn-danger-small" id="clearCacheBtn">Clear cache</button>
+    </div>
+  </section>
+
+  <!-- ── Page Info ── -->
+  <div class="page-info" id="pageInfo">
+    <div class="page-title-row">
+      <span class="page-topic-badge" id="topicBadge" hidden></span>
+    </div>
+    <p class="page-title" id="pageTitle">Loading page…</p>
+    <div class="page-meta" id="pageMeta" hidden>
+      <span id="wordCountBadge"></span>
+      <span class="dot">·</span>
+      <span id="readTimeBadge"></span>
+    </div>
+  </div>
+
+  <!-- ── Controls ── -->
+  <div class="controls" id="controls">
+    <div class="mode-toggle" role="group" aria-label="Summary mode">
+      <button class="mode-btn active" data-mode="full" id="modeFullBtn">Full</button>
+      <button class="mode-btn" data-mode="brief" id="modeBriefBtn">3-point</button>
+    </div>
+    <button class="btn-primary" id="summarizeBtn">
+      <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2.5">
+        <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z" />
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+        <line x1="12" y1="17" x2="12.01" y2="17" />
+      </svg>
+      Summarize
+    </button>
+  </div>
+
+  <!-- ── Loading ── -->
+  <div class="loading-state" id="loadingState" hidden aria-live="polite">
+    <div class="skeleton-header">
+      <div class="skeleton-chip"></div>
+      <div class="skeleton-line full"></div>
+      <div class="skeleton-meta"></div>
+    </div>
+    <div class="skeleton-body">
+      <div class="skeleton-bullet"></div>
+      <div class="skeleton-bullet"></div>
+      <div class="skeleton-bullet"></div>
+      <div class="skeleton-line seventy"></div>
+    </div>
+    <p class="loading-text" id="loadingText">Extracting content…</p>
+  </div>
+
+  <!-- ── Error ── -->
+  <div class="error-state" id="errorState" hidden role="alert">
+    <span class="error-icon" aria-hidden="true">⚠</span>
+    <p class="error-msg" id="errorMsg"></p>
+    <button class="btn-ghost-small" id="retryBtn">Retry</button>
+  </div>
+
+  <!-- ── Summary Output ── -->
+  <section class="summary-output" id="summaryOutput" hidden aria-label="Summary">
+    <!-- Cache badge -->
+    <div class="cache-badge" id="cacheBadge" hidden>
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" />
+      </svg>
+      Cached
+    </div>
+
+    <!-- Summary bullets -->
+    <div class="section">
+      <h2 class="section-heading">
+        <span class="section-num">01</span> Summary
+      </h2>
+      <ul class="bullet-list" id="summaryList"></ul>
+    </div>
+
+    <!-- Key Insights -->
+    <div class="section" id="insightsSection">
+      <h2 class="section-heading">
+        <span class="section-num">02</span> Key Insights
+      </h2>
+      <ul class="insight-list" id="insightList"></ul>
+    </div>
+
+    <!-- Actions row -->
+    <div class="action-row">
+      <button class="btn-action" id="highlightBtn" aria-pressed="false" title="Highlight key phrases on page">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M12 20h9" />
+          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+        </svg>
+        Highlight
+      </button>
+      <button class="btn-action" id="copyBtn" title="Copy summary to clipboard">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </svg>
+        Copy
+      </button>
+      <button class="btn-action btn-action-danger" id="clearBtn" title="Clear summary">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="3 6 5 6 21 6" />
+          <path d="M19 6l-1 14H6L5 6" />
+          <path d="M10 11v6" />
+          <path d="M14 11v6" />
+          <path d="M9 6V4h6v2" />
+        </svg>
+        Clear
+      </button>
+    </div>
+  </section>
+
+  <!-- ── Empty State ── -->
+  <div class="empty-state" id="emptyState" aria-live="polite">
+    <div class="empty-graphic" aria-hidden="true">
+      <div class="eg-line eg-l1"></div>
+      <div class="eg-line eg-l2"></div>
+      <div class="eg-line eg-l3"></div>
+      <div class="eg-dot"></div>
+    </div>
+    <p>Press <strong>Summarize</strong> to extract insights from this page.</p>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+
+</html>
