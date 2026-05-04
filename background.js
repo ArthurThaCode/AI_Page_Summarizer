@@ -58,7 +58,7 @@ async function handleSummarize({ url, title, content, mode }) {
 
 // Proxy API Call *********************************************************
 async function callProxyAPI(prompt) {
-  const targetModel = "gemini-1.5-flash"; // Standardized model
+  const targetModel = "gemini-flash-latest"; // Standardized model
   try {
     const response = await fetch(PROXY_URL, {
       method: "POST",

@@ -36,7 +36,7 @@ export default async function handler(req, res) {
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     // Use the model provided by extension, fallback to gemini-1.5-flash
-    const targetModel = model || "gemini-1.5-flash";
+    const targetModel = model || "gemini-flash-latest";
     const genModel = genAI.getGenerativeModel({ model: targetModel });
     
     const result = await genModel.generateContent(prompt);
