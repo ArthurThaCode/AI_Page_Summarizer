@@ -2,7 +2,7 @@
 // Handles all AI API communication securely, away from the frontend.
 
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
-const PROXY_URL = "https://ai-page-summarizer-proxy.vercel.app/api/summarize"; // Update this with your deployed URL
+const PROXY_URL = "https://ai-page-summarizer-chi.vercel.app/api/summarize";
 
 // Message Router***********************************************************
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
