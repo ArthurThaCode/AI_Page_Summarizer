@@ -1,0 +1,12 @@
+{
+  "name": "ai-page-summarizer-proxy",
+  "version": "1.0.0",
+  "description": "Proxy for Gemini API to hide keys",
+  "main": "api/summarize.js",
+  "dependencies": {
+    "@google/generative-ai": "^0.11.1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

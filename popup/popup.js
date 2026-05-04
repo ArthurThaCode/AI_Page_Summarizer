@@ -122,10 +122,7 @@ async function runSummarize() {
   const { apiKey, model } = await chrome.storage.local.get(["apiKey", "model"]);
   const targetModel = model || "gemini-flash-latest";
 
-  if (!apiKey) {
-    showError("No API key found. Open ⚙ Settings and paste your Google Gemini API key.");
-    return;
-  }
+  // Note: apiKey is now optional if a proxy is configured in background.js
 
   showState("loading");
   setLoadingText("Extracting page content…");

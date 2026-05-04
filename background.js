@@ -2,6 +2,7 @@
 // Handles all AI API communication securely, away from the frontend.
 
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const PROXY_URL = "https://ai-page-summarizer-proxy.vercel.app/api/summarize"; // Update this with your deployed URL
 
 // Message Router***********************************************************
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -32,7 +33,10 @@ async function handleSummarize({ url, title, content, mode, apiKey, model }) {
     throw new Error("Not enough readable content on this page.");
   }
   if (!apiKey || apiKey.trim() === "") {
-    throw new Error("API key is missing. Please add it in Settings.");
+    // If no key, we check if proxy is available
+    if (!PROXY_URL) {
+      throw new Error("API key is missing and no proxy is configured. Please add a key in Settings.");
+    }
   }
 
   // 2. Check cache
@@ -60,7 +64,13 @@ async function handleSummarize({ url, title, content, mode, apiKey, model }) {
 
 // AI API Call *********************************************************
 async function callGeminiAPI(prompt, apiKey, model) {
-  const targetModel = model || "gemini-flash-latest";
+  const targetModel = model || "gemini-1.5-flash";
+
+  // Use proxy if no API key is provided
+  if ((!apiKey || apiKey.trim() === "") && PROXY_URL) {
+    return await callProxyAPI(prompt, targetModel);
+  }
+
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent`;
 
   const response = await fetch(url, {
@@ -97,6 +107,29 @@ async function callGeminiAPI(prompt, apiKey, model) {
 
   if (!text) throw new Error("No response from AI. Please try again.");
   return text;
+}
+
+// Proxy API Call *********************************************************
+async function callProxyAPI(prompt, model) {
+  try {
+    const response = await fetch(PROXY_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ prompt, model }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err?.error || `Proxy error (${response.status})`);
+    }
+
+    const data = await response.json();
+    return data.text;
+  } catch (err) {
+    throw new Error(`Proxy connection failed: ${err.message}`);
+  }
 }
 
 // Prompt Builder ************************************************************
