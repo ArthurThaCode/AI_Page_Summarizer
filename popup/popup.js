@@ -8,9 +8,6 @@ const $ = (id) => document.getElementById(id);
 
 const settingsToggle = $("settingsToggle");
 const settingsPanel = $("settingsPanel");
-const apiKeyInput = $("apiKeyInput");
-const modelInput = $("modelInput");
-const saveKeyBtn = $("saveKeyBtn");
 const clearCacheBtn = $("clearCacheBtn");
 const pageTitle = $("pageTitle");
 const topicBadge = $("topicBadge");
@@ -43,7 +40,6 @@ let currentTab = null;
 
 // Init *********************************************************
 document.addEventListener("DOMContentLoaded", async () => {
-  await loadSettings();
   await loadCurrentTab();
   showState("empty");
 });
@@ -59,20 +55,7 @@ async function loadCurrentTab() {
   }
 }
 
-//    Settings *********************************************************
-async function loadSettings() {
-  return new Promise((resolve) => {
-    chrome.storage.local.get(["apiKey", "model"], (result) => {
-      if (result.apiKey) {
-        apiKeyInput.value = result.apiKey;
-      }
-      if (result.model) {
-        modelInput.value = result.model;
-      }
-      resolve();
-    });
-  });
-}
+// Settings *********************************************************
 
 settingsToggle.addEventListener("click", () => {
   const isHidden = settingsPanel.hidden;
@@ -80,22 +63,7 @@ settingsToggle.addEventListener("click", () => {
   settingsToggle.setAttribute("aria-expanded", String(isHidden));
 });
 
-saveKeyBtn.addEventListener("click", () => {
-  const key = apiKeyInput.value.trim();
-  const model = modelInput.value.trim() || "gemini-flash-latest";
-
-  if (key.length < 20) {
-    flashBorder(apiKeyInput, "#ff4d4d");
-    return;
-  }
-  chrome.storage.local.set({ apiKey: key, model: model }, () => {
-    flashBorder(apiKeyInput, "#d4ff00");
-    flashBorder(modelInput, "#d4ff00");
-    saveKeyBtn.textContent = "Saved ✓";
-    setTimeout(() => (saveKeyBtn.textContent = "Save"), 1500);
-  });
-});
-
+// Clear Cache *********************************************************
 clearCacheBtn.addEventListener("click", () => {
   chrome.runtime.sendMessage({ type: "CLEAR_CACHE", payload: { url: currentTab?.url } }, () => {
     clearCacheBtn.textContent = "Cleared ✓";
@@ -113,17 +81,11 @@ function setMode(mode) {
   modeBriefBtn.classList.toggle("active", mode === "brief");
 }
 
-//     Summarize Flow *********************************************************
+// Summarize Flow *********************************************************
 summarizeBtn.addEventListener("click", runSummarize);
 retryBtn.addEventListener("click", runSummarize);
 
 async function runSummarize() {
-  // 1. Get settings
-  const { apiKey, model } = await chrome.storage.local.get(["apiKey", "model"]);
-  const targetModel = model || "gemini-flash-latest";
-
-  // Note: apiKey is now optional if a proxy is configured in background.js
-
   showState("loading");
   setLoadingText("Extracting page content…");
   summarizeBtn.disabled = true;
@@ -159,8 +121,6 @@ async function runSummarize() {
         title,
         content,
         mode: currentMode,
-        apiKey: apiKey,
-        model: targetModel,
       },
     });
 
@@ -310,11 +270,6 @@ function setLoadingText(msg) {
 }
 
 // Helpers *********************************************************
-function getStoredKey() {
-  return new Promise((resolve) => {
-    chrome.storage.local.get(["apiKey"], (r) => resolve(r.apiKey || null));
-  });
-}
 
 function sendToTab(tabId, message) {
   return new Promise((resolve) => {
@@ -340,6 +295,7 @@ function sanitize(str) {
 }
 
 function flashBorder(el, color) {
+  if (!el) return;
   el.style.borderColor = color;
   setTimeout(() => (el.style.borderColor = ""), 1000);
 }

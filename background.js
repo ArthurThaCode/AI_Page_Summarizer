@@ -27,20 +27,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 // Main Summarize Handler*********************************************
-async function handleSummarize({ url, title, content, mode, apiKey, model }) {
+async function handleSummarize({ url, title, content, mode }) {
   // 1. Validate inputs
   if (!content || content.trim().length < 100) {
     throw new Error("Not enough readable content on this page.");
   }
-  if (!apiKey || apiKey.trim() === "") {
-    // If no key, we check if proxy is available
-    if (!PROXY_URL) {
-      throw new Error("API key is missing and no proxy is configured. Please add a key in Settings.");
-    }
-  }
 
   // 2. Check cache
-  const cacheKey = `summary_${hashString(url)}_${mode}_${model}`;
+  const cacheKey = `summary_${hashString(url)}_${mode}`;
   const cached = await getCached(cacheKey);
   if (cached) return { ...cached, fromCache: true };
 
@@ -50,8 +44,8 @@ async function handleSummarize({ url, title, content, mode, apiKey, model }) {
   // 4. Build prompt based on mode
   const prompt = buildPrompt(title, truncated, mode);
 
-  // 5. Call Google Gemini API
-  const summary = await callGeminiAPI(prompt, apiKey, model);
+  // 5. Call Proxy API
+  const summary = await callProxyAPI(prompt);
 
   // 6. Parse the structured response
   const parsed = parseResponse(summary);
@@ -62,62 +56,16 @@ async function handleSummarize({ url, title, content, mode, apiKey, model }) {
   return { ...parsed, fromCache: false };
 }
 
-// AI API Call *********************************************************
-async function callGeminiAPI(prompt, apiKey, model) {
-  const targetModel = model || "gemini-1.5-flash";
-
-  // Use proxy if no API key is provided
-  if ((!apiKey || apiKey.trim() === "") && PROXY_URL) {
-    return await callProxyAPI(prompt, targetModel);
-  }
-
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent`;
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-goog-api-key": apiKey,
-    },
-    body: JSON.stringify({
-      contents: [
-        {
-          parts: [{ text: prompt }],
-        },
-      ],
-      generationConfig: {
-        temperature: 0.2,
-        topP: 0.8,
-        topK: 40,
-      },
-    }),
-  });
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    if (response.status === 400 && err?.error?.message?.includes("key")) {
-      throw new Error("Invalid API key. Check your settings.");
-    }
-    if (response.status === 429) throw new Error("Rate limit reached. Please wait a moment.");
-    throw new Error(err?.error?.message || `API error (${response.status})`);
-  }
-
-  const data = await response.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-
-  if (!text) throw new Error("No response from AI. Please try again.");
-  return text;
-}
-
 // Proxy API Call *********************************************************
-async function callProxyAPI(prompt, model) {
+async function callProxyAPI(prompt) {
+  const targetModel = "gemini-1.5-flash"; // Standardized model
   try {
     const response = await fetch(PROXY_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ prompt, model }),
+      body: JSON.stringify({ prompt, model: targetModel }),
     });
 
     if (!response.ok) {

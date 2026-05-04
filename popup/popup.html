@@ -30,26 +30,6 @@
 
   <!-- ── Settings Panel ── -->
   <section class="settings-panel" id="settingsPanel" hidden aria-label="Settings">
-    <label class="field-label" for="modelInput">Model ID</label>
-    <div class="input-row">
-      <input
-        type="text"
-        id="modelInput"
-        class="api-input"
-        placeholder="gemini-flash-latest"
-        autocomplete="off"
-        spellcheck="false"
-      />
-    </div>
-    <label class="field-label" for="apiKeyInput">Google Gemini API Key</label>
-    <div class="input-row">
-      <input type="password" id="apiKeyInput" class="api-input" placeholder="Enter your API key…" autocomplete="off"
-        spellcheck="false" aria-describedby="apiKeyHint" />
-      <button class="btn-ghost" id="saveKeyBtn" aria-label="Save API key">Save</button>
-    </div>
-    <p class="hint" id="apiKeyHint">
-      Optional: Enter your own key to override the default proxy. Your key is stored locally and never shared.
-    </p>
     <div class="settings-footer">
       <button class="btn-danger-small" id="clearCacheBtn">Clear cache</button>
     </div>
