@@ -1,69 +1,69 @@
 # ⬡ AI Page Summarizer
 
-Une extension Chrome (Manifest V3) ultra-rapide qui utilise **Google Gemini AI** pour résumer n'importe quelle page web en quelques secondes avec une interface premium.
+A production-grade Chrome Extension (Manifest V3) that delivers instant webpage summaries using **Google Gemini AI**. Featuring a premium UI with real-time highlights and estimated reading time.
 
 ---
 
-## 📦 Installation rapide
+## 📦 Quick Installation
 
-1. **Téléchargez** ce dépôt : `git clone https://github.com/ArthurThaCode/AI_Page_Summarizer.git`
-2. **Ouvrez Chrome** et allez sur `chrome://extensions`.
-3. Activez le **Mode développeur** (en haut à droite).
-4. Cliquez sur **Charger l'extension non empaquetée** et sélectionnez le dossier du projet.
-5. Ouvrez les **Settings (⚙)** de l'extension et collez votre clé [Google Gemini API](https://aistudio.google.com/app/apikey).
-
----
-
-## 🏗 Architecture & Flux de données
-
-L'extension suit un flux unidirectionnel pour garantir performance et sécurité :
-
-1. **Popup (UI)** : L'utilisateur lance le résumé.
-2. **Content Script** : Extrait le texte utile de la page via une cascade de sélecteurs sémantiques (article, main, etc.) et ignore les publicités/menus.
-3. **Background Worker** : Seul composant autorisé à communiquer avec l'API Gemini. Il gère :
-   - Le **Cache** (chrome.storage.local) pour éviter les appels API inutiles.
-   - La **Troncation** (limite de ~12k caractères) pour rester dans les limites de tokens.
-   - L'appel **HTTPS** sécurisé vers l'endpoint Google AI.
-4. **Popup (UI)** : Reçoit les données structurées et les affiche avec des animations fluides.
+1. **Clone** this repository: `git clone https://github.com/ArthurThaCode/AI_Page_Summarizer.git`
+2. **Open Chrome** and navigate to `chrome://extensions`.
+3. Enable **Developer Mode** (top-right toggle).
+4. Click **Load unpacked** and select the project folder.
+5. Open the extension **Settings (⚙)**, paste your [Google Gemini API key](https://aistudio.google.com/app/apikey), and click **Save**.
 
 ---
 
-## 🔐 Sécurité & Confidentialité
+## 🏗 Architecture & Data Flow
 
-- **Secrets** : La clé API est stockée localement via `chrome.storage.local`. Elle n'est jamais exposée dans le code source ou dans le contexte des pages web visitées.
-- **XSS** : Toutes les données provenant de l'IA sont injectées via `.textContent` ou des méthodes DOM sécurisées, empêchant toute exécution de code malveillant.
-- **Permissions** : Utilisation stricte de `activeTab` pour limiter l'accès uniquement à la page que l'utilisateur choisit de résumer.
+The extension follows a secure, unidirectional data flow:
+
+1. **Popup (UI)**: User triggers the summarization process.
+2. **Content Script**: Extracts readable text using a semantic selector waterfall (article, main, etc.) while stripping ads and navigation clutter.
+3. **Background Worker**: The only component authorized to make external requests. It handles:
+   - **Caching** (chrome.storage.local) to prevent redundant API calls.
+   - **Content Truncation** (~12k chars) to stay within token limits.
+   - **Secure HTTPS** requests to the Google AI API.
+4. **Popup (UI)**: Receives structured JSON and renders the summary with fluid animations.
 
 ---
 
-## ⚖️ Choix Techniques & Trade-offs
+## 🔐 Security & Privacy
 
-| Décision | Pourquoi ? | Compromis |
+- **Secrets Management**: Your API key is stored locally via `chrome.storage.local`. It is never hardcoded or exposed to the webpage context.
+- **XSS Prevention**: All AI-generated content is injected using `.textContent` or safe DOM methods, preventing malicious code execution.
+- **Minimal Permissions**: The extension uses `activeTab` to ensure it only accesses the specific page you choose to summarize.
+
+---
+
+## ⚖️ Technical Choices & Trade-offs
+
+| Decision | Rationale | Trade-off |
 | :--- | :--- | :--- |
-| **Gemini 1.5 Flash** | Rapidité extrême et gratuité (via AI Studio). | Nécessite une clé API personnelle. |
-| **Local Cache** | Économise les ressources et réduit la latence. | Les résumés ne s'actualisent pas si la page change en <30min. |
-| **Heuristique DOM** | Performance sans dépendances lourdes. | Peut manquer de précision sur des structures HTML très exotiques. |
-| **Pas de Serveur** | Simplicité de déploiement et zéro coût d'infra. | La logique de sécurité repose entièrement sur l'extension. |
+| **Gemini 1.5 Flash** | Extreme speed and generous free tier. | Requires a personal Google AI Studio key. |
+| **Local Caching** | Saves API quota and reduces latency. | Summaries may stay cached for 30 min even if page content updates. |
+| **DOM Heuristics** | Lightweight extraction without heavy dependencies. | May miss content on extremely non-standard HTML structures. |
+| **Serverless** | Zero infrastructure cost and easy deployment. | Security logic resides entirely within the extension client. |
 
 ---
 
-## 🗂 Structure du Projet
+## 🗂 Project Structure
 
 ```
 AI_Page_Summarizer/
-├── background.js     # Service worker (API, Cache, Logique)
-├── content.js        # Extraction de texte et Surlignage
-├── popup/            # Interface utilisateur (HTML, CSS, JS)
-├── icons/            # Ressources visuelles
-└── manifest.json     # Configuration de l'extension
+├── background.js     # Service worker (API logic, Caching)
+├── content.js        # Content extraction & Highlight logic
+├── popup/            # User interface (HTML, CSS, JS)
+├── icons/            # Extension branding
+└── manifest.json     # Extension manifest (v3)
 ```
 
 ---
 
-## 🛠 Notes de développement
+## 🛠 Development Notes
 
-- **Débogage** : Inspectez le popup pour l'UI, ou le "Service Worker" dans la gestion des extensions pour les logs API.
-- **Modèle** : Configurable via le panneau Settings (par défaut `gemini-flash-latest`).
+- **Debugging**: Inspect the popup for UI issues or the "Service Worker" link in the extensions manager for API logs.
+- **Model**: Fully configurable via the Settings panel (defaults to `gemini-flash-latest`).
 
 ---
-**MIT License** — Créé pour le Stage 4A de HNG.
+**MIT License** — Built for HNG Stage 4A.
