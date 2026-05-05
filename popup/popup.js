@@ -163,7 +163,7 @@ function renderSummary(data, wordCount) {
   summaryList.innerHTML = "";
   summary.forEach((point, i) => {
     const li = document.createElement("li");
-    li.textContent = sanitize(point);
+    li.innerHTML = sanitize(point);
     li.style.animationDelay = `${i * 60}ms`;
     summaryList.appendChild(li);
   });
@@ -173,7 +173,7 @@ function renderSummary(data, wordCount) {
     insightList.innerHTML = "";
     insights.forEach((ins, i) => {
       const li = document.createElement("li");
-      li.textContent = sanitize(ins);
+      li.innerHTML = sanitize(ins);
       li.style.animationDelay = `${i * 60}ms`;
       insightList.appendChild(li);
     });

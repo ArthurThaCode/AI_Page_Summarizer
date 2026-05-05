@@ -24,8 +24,8 @@ export default async function handler(req, res) {
   const apiKey = process.env.GOOGLE_API_KEY;
 
   if (!apiKey) {
-    return res.status(500).json({ 
-      error: 'Backend API key not configured. Please set GOOGLE_API_KEY in environment variables.' 
+    return res.status(500).json({
+      error: 'Backend API key not configured. Please set GOOGLE_API_KEY in environment variables.'
     });
   }
 
@@ -35,14 +35,14 @@ export default async function handler(req, res) {
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    // Use the model provided by extension, fallback to gemini-1.5-flash
+    // Use the model provided by extension
     const targetModel = model || "gemini-flash-latest";
     const genModel = genAI.getGenerativeModel({ model: targetModel });
-    
+
     const result = await genModel.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
-    
+
     if (!text) {
       throw new Error("Empty response from AI model.");
     }
@@ -50,7 +50,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ text });
   } catch (error) {
     console.error('Gemini Proxy Error:', error);
-    
+
     // Attempt to parse safety ratings or other specific Gemini errors
     const errorMessage = error.message || 'Error communicating with Gemini API';
     return res.status(500).json({ error: errorMessage });
